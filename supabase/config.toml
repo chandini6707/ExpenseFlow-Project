@@ -1,0 +1,11 @@
+project_id = "expenseflow"
+
+[auth.email]
+# Local Supabase development. Hosted projects also need this setting in the dashboard.
+enable_signup = true
+enable_confirmations = false
+
+[functions.save-expense]
+# This function verifies the user JWT with Auth.getUser before any privileged work.
+# Explicit verification supports both legacy and asymmetric signing-key projects.
+verify_jwt = false

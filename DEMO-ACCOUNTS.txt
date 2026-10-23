@@ -1,0 +1,23 @@
+ExpenseFlow demonstration accounts
+
+Login: https://expenseflow-enterprise-demo.foggyflute64.chatgpt.site/login.html
+
+Use email/password sign-in. These accounts are already created in Supabase.
+Google sign-in is separate and requires correcting the Google OAuth client.
+
+Password for the four demo accounts: Ef9!0EqOWjIp94RCRXovEr3-15yM
+
+Employee: expenseflow.employee@example.com
+Manager: expenseflow.manager@example.com
+Finance: expenseflow.finance@example.com
+Admin: expenseflow.admin@example.com
+
+The travel claim is reimbursed in the simulation. The hotel and food claims await manager approval.
+Existing employee accounts retain employee access and have the demo manager assigned.
+New registrations receive employee access; use the demo admin to assign their manager.
+These are sample accounts and sample receipts. No bank transfer was made.
+This file contains demo passwords. Keep it out of the website and source repository.
+
+
+Live role note - 15 October 2026:
+The account expenseflow.admin@example.com currently has Employee access in the database. Its name does not grant Admin permissions. Use an existing authorized administrator for role assignments. This update does not change any account role. See docs/WORKSPACE-UPDATE.md.

@@ -1,0 +1,27 @@
+import { reportDateError } from './report-data.js';
+import { $, i, icons, stat, tableHTML } from './ui.js';
+import { expenses } from './api.js';
+import { categories, filterExpenses, INR, sum, exportCSV } from './utils.js';
+import { renderSpendingCharts, renderDepartmentChart, destroyCharts } from './charts.js';
+import { expenseGroups } from './expense-state.js';
+export async function analyticsPage() {
+  const filters=['report-from','report-to','report-category'].map(id=>document.getElementById(id)?.value||'');
+  const rows=await expenses();
+  $('#page-content').innerHTML=`<section class="panel report-filters section-space"><label class="control-label">From date<input id="report-from" type="date"></label><label class="control-label">To date<input id="report-to" type="date"></label><label class="control-label">Category<select id="report-category"><option value="">All categories</option>${categories.map(c=>`<option>${c}</option>`).join('')}</select></label><button id="report-clear" class="button secondary">Clear filters</button><button id="report-export" class="button primary">${i('download')}Export CSV</button></section><div id="report-error" class="form-feedback report-error" hidden role="alert"></div><div id="report-statistics"></div><div class="middle-grid"><section class="panel"><div class="panel-header"><div><h2>Expense trends</h2><p><span id="trend-period">Last six months</span> · Grouped by expense date; the reimbursed portion is part of claims</p></div></div><div class="canvas-wrap"><canvas id="monthly-chart" aria-label="Expense trends" role="img"></canvas></div></section><section class="panel"><div class="panel-header"><div><h2>Category spending</h2><p>Claims excluding drafts</p></div></div><div class="canvas-wrap"><canvas id="category-chart" aria-label="Category-wise expense chart" role="img"></canvas></div></section></div><section class="panel section-space"><div class="panel-header"><div><h2>Department-wise expenses</h2><p>Calculated from profiles you are permitted to access</p></div></div><div class="canvas-wrap"><canvas id="department-chart" aria-label="Department expense chart" role="img"></canvas></div></section><section class="panel"><div class="panel-header"><div><h2>Report records</h2><p id="report-count"></p></div></div><div id="report-table"></div><div class="pagination"><span id="report-page"></span><div><button class="button secondary" id="report-prev">Previous</button><button class="button secondary" id="report-next">Next</button></div></div></section>`;
+  ['report-from','report-to','report-category'].forEach((id,n)=>document.getElementById(id).value=filters[n]);
+  let visible=rows,page=1;const limit=10;
+  function drawTable() {const pages=Math.max(1,Math.ceil(visible.length/limit));page=Math.min(page,pages);$('#report-table').innerHTML=tableHTML(visible.slice((page-1)*limit,page*limit),true);$('#report-page').textContent=`Page ${page} of ${pages}`;$('#report-prev').disabled=page<=1;$('#report-next').disabled=page>=pages;icons();}
+  function draw() {
+    const from=$('#report-from').value,to=$('#report-to').value,error=reportDateError(from,to);$('#report-from').max=to||'';$('#report-to').min=from||'';
+    $('#report-error').hidden=!error;$('#report-error').textContent=error;
+    $('#report-export').disabled=!!error;
+    $('#report-from').setAttribute('aria-invalid',String(!!error));$('#report-to').setAttribute('aria-invalid',String(!!error));
+    if(error){visible=[];destroyCharts();$('#report-statistics').replaceChildren();$('#report-table').replaceChildren();$('#report-count').textContent='Choose a valid date range to load this report.';$('#report-page').textContent='';$('#report-prev').disabled=true;$('#report-next').disabled=true;return;}
+    $('#trend-period').textContent=from||to?'Selected period (ranges over 12 months group by year)':'Last six months';
+    visible=filterExpenses(rows,{from,to,category:$('#report-category').value});page=1;
+    const {submitted,approved,rejected,outstanding:pending}=expenseGroups(visible),decided=approved.length+rejected.length;
+    $('#report-statistics').innerHTML=`<div class="stats-grid">${stat('Total expense claims',String(submitted.length),'Excludes drafts','receipt','lavender')}${stat('Total approved',INR(sum(approved)),`${approved.length} approved claims`,'badge-check','green')}${stat('Total rejected',INR(sum(rejected)),`${rejected.length} rejected claims`,'circle-x','amber')}${stat('Pending reimbursements',INR(sum(pending)),`${pending.length} waiting / processing`,'clock-3','blue')}</div><div class="notice">${i('chart-no-axes-combined')}<div><strong>Approval rate: ${decided?Math.round(approved.length/decided*100):0}%.</strong> Based on ${decided} decided claims. Reports use only the records permitted by your account’s database permissions.</div></div>`;
+    $('#report-count').textContent=visible.length+' authorized records match your filters · '+(visible.length-submitted.length)+' drafts excluded from totals';$('#report-export').disabled=!visible.length;renderSpendingCharts(visible,{from,to});renderDepartmentChart(visible);drawTable();
+  }
+  ['#report-from','#report-to','#report-category'].forEach(s=>$(s).onchange=draw);$('#report-clear').onclick=()=>{$('#report-from').value='';$('#report-to').value='';$('#report-category').value='';draw();};$('#report-export').onclick=()=>exportCSV(visible);$('#report-prev').onclick=()=>{page--;drawTable();};$('#report-next').onclick=()=>{page++;drawTable();};draw();
+}

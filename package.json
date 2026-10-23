@@ -1,0 +1,12 @@
+{
+  "name": "expenseflow-enterprise",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vanilla JavaScript and Supabase enterprise expense verification platform",
+  "scripts": {
+    "dev": "python3 -m http.server 5500 --directory dist --bind 127.0.0.1",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check-project.mjs"
+  }
+}
